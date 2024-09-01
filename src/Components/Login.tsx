@@ -1,11 +1,12 @@
-import { useState, ChangeEvent } from "react"
+import { useState, ChangeEvent, useEffect } from "react"
 import Button from "./Button"
 import Input from "./Input"
-import { BE_signIn, BE_signUp } from "../Backend/Queries";
+import { BE_signIn, BE_signUp, getStorageUser } from "../Backend/Queries";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../Redux/store";
 import { authDataType } from "../Types";
+import { setUser } from "../Redux/userSlice";
 
 const Login = () => {
     const [login, setLogin] = useState(true);
@@ -16,6 +17,14 @@ const Login = () => {
     const [signInLoading, setSignInLoading] = useState(false);
     const goTo = useNavigate();
     const dispatch = useDispatch<AppDispatch>();
+    const currentUser = getStorageUser()
+
+    useEffect(() => {
+        if (currentUser?.id) {
+            dispatch(setUser(currentUser));
+            goTo("/dashboard");
+        }
+    }, [])
 
     const handleSignup = () => {
         const data = { email, password, confirmPassword };
@@ -36,7 +45,7 @@ const Login = () => {
             setLoading: React.Dispatch<React.SetStateAction<boolean>>,
             reset: () => void,
             goTo: NavigateFunction,
-            dispatch,
+            dispatch: AppDispatch,
         ) => void,
         setLoading: React.Dispatch<React.SetStateAction<boolean>>,
     ) => {

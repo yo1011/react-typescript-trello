@@ -1,11 +1,11 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "./Firebase";
 import { toastErr } from "../utils/toast";
 import { CatchError } from "../utils/catchError";
 import { authDataType, setLoadingType, userType } from "../Types";
 import { NavigateFunction } from "react-router-dom";
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
-import { defaultUser, setUser } from "../Redux/userSlice";
+import { defaultUser, setUser, userStorageName } from "../Redux/userSlice";
 import { AppDispatch } from "../Redux/store";
 import ConvertTime from "../utils/ConvertTime";
 import AvatarGenerator from "../utils/avatarGenerator";
@@ -104,6 +104,33 @@ export const BE_signIn = (
     }
 }
 
+export const BE_signOut = (
+    dispatch: AppDispatch,
+    goTo: NavigateFunction,
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>
+) => {
+    setLoading(true);
+
+    // logot user from firebase
+    signOut(auth).then(async () => {
+        //route auth page
+        goTo("/auth");
+
+        // set user offline
+        await updateUserInfo({ isOffline: true });
+
+        // set currentSelected to empty user
+        dispatch(setUser(defaultUser));
+
+        // remove from localstorage
+        localStorage.removeItem(userStorageName);
+        setLoading(false);
+    }).catch((err) => {
+        console.log(err)
+        setLoading(false);
+    });
+}
+
 const addUserToCollection = async (
     id: string,
     email: string,
@@ -179,8 +206,8 @@ const updateUserInfo = async (
     }
 }
 
-const getStorageUser = () => {
-    const usr = localStorage.getItem("current_user");
+export const getStorageUser = () => {
+    const usr = localStorage.getItem(userStorageName);
     if (usr) {
         return JSON.parse(usr);
     }
